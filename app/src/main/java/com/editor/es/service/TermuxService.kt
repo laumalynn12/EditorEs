@@ -29,6 +29,9 @@ class TermuxService : Service() {
         private const val NOTIFICATION_ID = 1001
         const val ACTION_EXIT = "com.editor.es.ACTION_EXIT"
 
+        lateinit var currentInstance: TermuxService
+            private set
+
         private val sessions = LinkedHashMap<Int, SessionRecord>()
         private val sessionCounter = AtomicInteger(0)
         private val tagged = LinkedHashMap<String, Int>()
@@ -108,9 +111,9 @@ class TermuxService : Service() {
             Handler(Looper.getMainLooper()).post { 
                 onSessionsChanged?.invoke()
                 val count = sessionCount()
-                if (count > 0) {
+                if (count > 0 && ::currentInstance.isInitialized) {
                     val notification = buildNotificationStatic(context, count)
-                    context.startForeground(NOTIFICATION_ID, notification)
+                    currentInstance.startForeground(NOTIFICATION_ID, notification)
                 }
             }
         }
@@ -187,6 +190,7 @@ class TermuxService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        currentInstance = this
         createChannel(this)
     }
 
