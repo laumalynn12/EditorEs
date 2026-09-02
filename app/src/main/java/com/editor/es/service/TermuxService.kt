@@ -66,7 +66,7 @@ class TermuxService : Service() {
             activeSession = session
             activeSessionId = id
             context.startForegroundService(Intent(context, TermuxService::class.java))
-            notifyChanged()
+            notifyChanged(context)
             return id
         }
 
@@ -81,8 +81,9 @@ class TermuxService : Service() {
             }
             if (sessions.isEmpty()) {
                 context.stopService(Intent(context, TermuxService::class.java))
+            } else {
+                notifyChanged(context)
             }
-            notifyChanged()
         }
 
         fun registerSession(context: Context, session: TerminalSession, name: String? = null): Int {
@@ -93,7 +94,7 @@ class TermuxService : Service() {
             activeSession = session
             activeSessionId = id
             context.startForegroundService(Intent(context, TermuxService::class.java))
-            notifyChanged()
+            notifyChanged(context)
             return id
         }
 
@@ -101,7 +102,42 @@ class TermuxService : Service() {
             val record = sessions[id] ?: return
             activeSession = record.session
             activeSessionId = id
-            notifyChanged()
+        }
+
+        fun notifyChanged(context: Context) {
+            Handler(Looper.getMainLooper()).post { 
+                onSessionsChanged?.invoke()
+                val count = sessionCount()
+                if (count > 0) {
+                    val notification = buildNotificationStatic(context, count)
+                    context.startForeground(NOTIFICATION_ID, notification)
+                }
+            }
+        }
+
+        private fun buildNotificationStatic(context: Context, count: Int): Notification {
+            val contentIntent = PendingIntent.getActivity(
+                context,
+                0,
+                Intent(context, MainActivity::class.java),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+            val exitIntent = PendingIntent.getService(
+                context,
+                1,
+                Intent(context, TermuxService::class.java).setAction(ACTION_EXIT),
+                PendingIntent.FLAG_IMMUTABLE
+            )
+            val text = if (count == 1) "1 active session" else "$count active sessions"
+            return NotificationCompat.Builder(context, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle(context.getString(R.string.app_name))
+                .setContentText(text)
+                .setOngoing(true)
+                .setSilent(true)
+                .setContentIntent(contentIntent)
+                .addAction(0, context.getString(R.string.session_notification_exit), exitIntent)
+                .build()
         }
 
         fun killSession(context: Context, id: Int) {
@@ -116,11 +152,8 @@ class TermuxService : Service() {
             if (sessions.isEmpty()) {
                 context.stopService(Intent(context, TermuxService::class.java))
             } else {
-                Handler(Looper.getMainLooper()).post {
-                    startForeground(NOTIFICATION_ID, buildNotification())
-                }
+                notifyChanged(context)
             }
-            notifyChanged()
         }
 
         fun unregisterSession(context: Context, id: Int) {
@@ -134,15 +167,8 @@ class TermuxService : Service() {
             if (sessions.isEmpty()) {
                 context.stopService(Intent(context, TermuxService::class.java))
             } else {
-                Handler(Looper.getMainLooper()).post {
-                    startForeground(NOTIFICATION_ID, buildNotification())
-                }
+                notifyChanged(context)
             }
-            notifyChanged()
-        }
-
-        private fun notifyChanged() {
-            Handler(Looper.getMainLooper()).post { onSessionsChanged?.invoke() }
         }
 
         fun createChannel(context: Context) {
@@ -167,22 +193,23 @@ class TermuxService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         runCatching { startForeground(NOTIFICATION_ID, buildNotification()) }
         if (intent?.action == ACTION_EXIT) {
-            killAllSessions()
-            Handler(Looper.getMainLooper()).post { onExitRequested?.invoke() }
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
+            killAllSessions(this)
+            Handler(Looper.getMainLooper()).post { 
+                onExitRequested?.invoke()
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf()
+            }
             return START_NOT_STICKY
         }
         return START_NOT_STICKY
     }
 
-    private fun killAllSessions() {
+    private fun killAllSessions(context: Context) {
         sessions.values.forEach { runCatching { it.session.finishIfRunning() } }
         sessions.clear()
         tagged.clear()
         activeSession = null
         activeSessionId = null
-        notifyChanged()
     }
 
     private fun buildNotification(): Notification {
