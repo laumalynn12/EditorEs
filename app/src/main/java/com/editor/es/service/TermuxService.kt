@@ -115,6 +115,10 @@ class TermuxService : Service() {
             }
             if (sessions.isEmpty()) {
                 context.stopService(Intent(context, TermuxService::class.java))
+            } else {
+                Handler(Looper.getMainLooper()).post {
+                    startForeground(NOTIFICATION_ID, buildNotification())
+                }
             }
             notifyChanged()
         }
@@ -129,6 +133,10 @@ class TermuxService : Service() {
             }
             if (sessions.isEmpty()) {
                 context.stopService(Intent(context, TermuxService::class.java))
+            } else {
+                Handler(Looper.getMainLooper()).post {
+                    startForeground(NOTIFICATION_ID, buildNotification())
+                }
             }
             notifyChanged()
         }
