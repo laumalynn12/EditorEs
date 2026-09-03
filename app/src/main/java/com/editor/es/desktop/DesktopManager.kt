@@ -50,40 +50,65 @@ object DesktopManager {
         """.trimIndent()
         val args = ProotConfig.commandArgs(context, script, "/root")
         val env = ProotConfig.prootEnv(context)
+
+        var foundReady = false
+        var failed = false
+        var doneCalled = false
+
+        val client = object : com.termux.terminal.TerminalSessionClient {
+            override fun onTextChanged(session: com.termux.terminal.TerminalSession) {
+                val text = session.screen.getTranscriptText()
+                text.lines().forEach { line ->
+                    onLine(line)
+                    if (line.contains("==> vnc ready")) {
+                        foundReady = true
+                    }
+                    if (line.contains("==> vnc failed")) {
+                        failed = true
+                    }
+                }
+            }
+            override fun onTitleChanged(session: com.termux.terminal.TerminalSession) {}
+            override fun onSessionFinished(session: com.termux.terminal.TerminalSession) {
+                if (!foundReady && !doneCalled) {
+                    doneCalled = true
+                    onDone(false, "session exited before vnc ready")
+                }
+            }
+            override fun onCopyTextToClipboard(session: com.termux.terminal.TerminalSession, text: String?) {}
+            override fun onPasteTextFromClipboard(session: com.termux.terminal.TerminalSession) {}
+            override fun onBell(session: com.termux.terminal.TerminalSession) {}
+            override fun onColorsChanged(session: com.termux.terminal.TerminalSession) {}
+            override fun onTerminalCursorStateChange(state: Boolean) {}
+            override fun getTerminalCursorStyle(): Int = 0
+        }
+
         val session = com.termux.terminal.TerminalSession(
             ProotConfig.prootBinary(context),
             context.filesDir.absolutePath,
             args.toTypedArray(),
             env,
             null,
-            null
+            client
         )
         TermuxService.registerTagged(context, Tag, session, "Desktop")
-        var foundReady = false
+
         Thread {
-            for (i in 1..15) {
-                val transcript = runCatching {
-                    session.getEmulator().screen.getTranscriptText()
-                }.getOrNull() ?: ""
-                transcript.lines().forEach { line ->
-                    onLine(line)
-                    if (line.contains("==> vnc ready")) foundReady = true
-                    if (line.contains("==> vnc failed")) {
-                        onDone(false, "vnc server failed to start")
-                        return@Thread
-                    }
-                }
+            var attempts = 0
+            while (attempts < 30 && !foundReady && !failed) {
+                Thread.sleep(500)
+                attempts++
+            }
+            if (!doneCalled) {
+                doneCalled = true
                 if (foundReady) {
                     onDone(true, null)
-                    return@Thread
+                } else if (failed) {
+                    onDone(false, "vnc server failed to start")
+                } else {
+                    onDone(false, "timeout waiting for vnc")
                 }
-                if (!session.isRunning) {
-                    onDone(false, "session exited before vnc ready")
-                    return@Thread
-                }
-                Thread.sleep(1000)
             }
-            if (!foundReady) onDone(false, "timeout waiting for vnc")
         }.start()
     }
 
