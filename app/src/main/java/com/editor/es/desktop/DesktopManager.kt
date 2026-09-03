@@ -103,5 +103,3 @@ object DesktopManager {
     fun isRunning(): Boolean =
         TermuxService.taggedSession(Tag)?.second?.isRunning == true
 }
-
-</content>

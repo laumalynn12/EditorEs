@@ -145,5 +145,3 @@ fun DesktopScreen(onBack: () -> Unit) {
         }
     }
 }
-
-</content>
