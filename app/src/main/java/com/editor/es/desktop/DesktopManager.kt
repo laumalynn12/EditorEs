@@ -55,6 +55,7 @@ object DesktopManager {
             context.filesDir.absolutePath,
             args.toTypedArray(),
             env,
+            null,
             null
         )
         TermuxService.registerTagged(context, Tag, session, "Desktop")
