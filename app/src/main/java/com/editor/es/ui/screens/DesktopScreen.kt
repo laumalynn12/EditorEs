@@ -54,7 +54,7 @@ fun DesktopScreen(onBack: () -> Unit) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = EditorEsPalette.textPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = EditorEsPalette.surface)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = EditorEsPalette.background)
             )
         },
         containerColor = EditorEsPalette.background
@@ -128,7 +128,7 @@ fun DesktopScreen(onBack: () -> Unit) {
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .background(EditorEsPalette.surface, MaterialTheme.shapes.medium)
+                    .background(EditorEsPalette.background.copy(alpha = 0.6f), MaterialTheme.shapes.medium)
                     .padding(12.dp)
                     .verticalScroll(rememberScrollState())
             ) {

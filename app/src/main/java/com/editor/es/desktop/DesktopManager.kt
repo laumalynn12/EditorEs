@@ -5,8 +5,6 @@ import android.content.Intent
 import android.net.Uri
 import com.editor.es.proot.ProotConfig
 import com.editor.es.service.TermuxService
-import com.termux.terminal.TerminalSession
-import com.termux.terminal.TerminalSessionClient
 import java.io.File
 
 object DesktopManager {
@@ -25,7 +23,7 @@ object DesktopManager {
             return
         }
         TermuxService.taggedSession(Tag)?.let { (_, session) ->
-            session.finish()
+            session.finishIfRunning()
         }
         val socketGuestPath = "/tmp/$VncSocketName"
         val script = """
@@ -52,7 +50,7 @@ object DesktopManager {
         """.trimIndent()
         val args = ProotConfig.commandArgs(context, script, "/root")
         val env = ProotConfig.prootEnv(context)
-        val session = TerminalSession(
+        val session = com.termux.terminal.TerminalSession(
             ProotConfig.prootBinary(context),
             context.filesDir.absolutePath,
             args.toTypedArray(),
@@ -61,25 +59,25 @@ object DesktopManager {
         )
         TermuxService.registerTagged(context, Tag, session, "Desktop")
         var foundReady = false
-        session.addSessionClient(object : TerminalSessionClient by NoopSessionClient {
-            override fun onTextChanged(changedSession: TerminalSession) {
-                val text = changedSession.screen.getTranscriptText()
-                text.lines().forEach { line ->
+        Thread {
+            for (i in 1..15) {
+                val transcript = runCatching {
+                    session.getEmulator().screen.getTranscriptText()
+                }.getOrNull() ?: ""
+                transcript.lines().forEach { line ->
                     onLine(line)
                     if (line.contains("==> vnc ready")) foundReady = true
                     if (line.contains("==> vnc failed")) {
                         onDone(false, "vnc server failed to start")
+                        return@Thread
                     }
                 }
-            }
-            override fun onSessionFinished(finishedSession: TerminalSession) {
-                if (!foundReady) onDone(false, "session exited before vnc ready")
-            }
-        })
-        Thread {
-            for (i in 1..15) {
                 if (foundReady) {
                     onDone(true, null)
+                    return@Thread
+                }
+                if (!session.isRunning) {
+                    onDone(false, "session exited before vnc ready")
                     return@Thread
                 }
                 Thread.sleep(1000)
@@ -104,18 +102,6 @@ object DesktopManager {
 
     fun isRunning(): Boolean =
         TermuxService.taggedSession(Tag)?.second?.isRunning == true
-}
-
-private object NoopSessionClient : TerminalSessionClient {
-    override fun onTextChanged(session: TerminalSession) {}
-    override fun onTitleChanged(session: TerminalSession) {}
-    override fun onSessionFinished(session: TerminalSession) {}
-    override fun onCopyTextToClipboard(session: TerminalSession, text: String?) {}
-    override fun onPasteTextFromClipboard(session: TerminalSession) {}
-    override fun onBell(session: TerminalSession) {}
-    override fun onColorsChanged(session: TerminalSession) {}
-    override fun onTerminalCursorStateChange(state: Boolean) {}
-    override fun getTerminalCursorStyle(): Int = 0
 }
 
 </content>
