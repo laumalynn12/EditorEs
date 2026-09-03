@@ -33,6 +33,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.editor.es.desktop.DesktopManager
@@ -54,10 +55,10 @@ fun DesktopScreen(onBack: () -> Unit) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = EditorEsPalette.textPrimary)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = EditorEsPalette.background)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = EditorEsPalette.abyss)
             )
         },
-        containerColor = EditorEsPalette.background
+        containerColor = EditorEsPalette.abyss
     ) { padding ->
         Column(
             modifier = Modifier
@@ -128,7 +129,7 @@ fun DesktopScreen(onBack: () -> Unit) {
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .background(EditorEsPalette.background.copy(alpha = 0.6f), MaterialTheme.shapes.medium)
+                    .background(Color(0xFF0A1F26), MaterialTheme.shapes.medium)
                     .padding(12.dp)
                     .verticalScroll(rememberScrollState())
             ) {
