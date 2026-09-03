@@ -57,7 +57,7 @@ object DesktopManager {
 
         val client = object : com.termux.terminal.TerminalSessionClient {
             override fun onTextChanged(session: com.termux.terminal.TerminalSession) {
-                val text = session.screen.getTranscriptText()
+                val text = session.getEmulator().screen.getTranscriptText()
                 text.lines().forEach { line ->
                     onLine(line)
                     if (line.contains("==> vnc ready")) {
@@ -76,7 +76,7 @@ object DesktopManager {
                 }
             }
             override fun onCopyTextToClipboard(session: com.termux.terminal.TerminalSession, text: String?) {}
-            override fun onPasteTextFromClipboard(session: com.termux.terminal.TerminalSession) {}
+            override fun onPasteTextFromClipboard(session: com.termux.terminal.TerminalSession?) {}
             override fun onBell(session: com.termux.terminal.TerminalSession) {}
             override fun onColorsChanged(session: com.termux.terminal.TerminalSession) {}
             override fun onTerminalCursorStateChange(state: Boolean) {}
