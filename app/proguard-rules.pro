@@ -26,3 +26,5 @@
 -dontwarn com.android.tools.smali.**
 -dontwarn com.android.apksig.**
 -dontwarn org.bouncycastle.**
+-keep class com.gaurav.avnc.** { *; }
+-dontwarn com.gaurav.avnc.**
