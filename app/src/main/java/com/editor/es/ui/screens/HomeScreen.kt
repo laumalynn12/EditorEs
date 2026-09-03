@@ -98,6 +98,14 @@ fun HomeScreen(onNavigate: (EditorEsRoute) -> Unit, onProjectCreated: (String) -
         Spacer(modifier = Modifier.height(14.dp))
         EntranceItem(visible = visible, delayMillis = 480) {
             EditorEsButton(
+                label = stringResource(R.string.desktop),
+                iconRes = R.drawable.terminal,
+                onClick = { onNavigate(EditorEsRoute.Desktop) }
+            )
+        }
+        Spacer(modifier = Modifier.height(14.dp))
+        EntranceItem(visible = visible, delayMillis = 560) {
+            EditorEsButton(
                 label = stringResource(R.string.settings),
                 iconRes = R.drawable.settings,
                 onClick = { onNavigate(EditorEsRoute.Settings) }

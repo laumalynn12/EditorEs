@@ -16,6 +16,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.editor.es.agent.AgentCatalog
 import com.editor.es.agent.AgentInstaller
+import com.editor.es.ui.screens.DesktopScreen
 import com.editor.es.ui.screens.EditorScreen
 import com.editor.es.ui.screens.HomeScreen
 import com.editor.es.ui.settings.SettingsScreen
@@ -26,7 +27,8 @@ enum class EditorEsRoute(val path: String) {
     Terminal("terminal"),
     Settings("settings"),
     AgentTerminal("agent"),
-    Editor("editor")
+    Editor("editor"),
+    Desktop("desktop")
 }
 
 fun editorRoute(path: String): String = EditorEsRoute.Editor.path + "/" + Uri.encode(path)
@@ -86,6 +88,9 @@ fun EditorEsNavHost(
                 onBack = { navController.popBackStack() },
                 projectDir = path.takeIf { it.isNotEmpty() }?.let { java.io.File(it) }
             )
+        }
+        composable(EditorEsRoute.Desktop.path) {
+            DesktopScreen(onBack = { navController.popBackStack() })
         }
         composable(EditorEsRoute.Settings.path) {
             SettingsScreen(
